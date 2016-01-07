@@ -1,11 +1,15 @@
 # all the imports
 from __future__ import with_statement
+import sys
+sys.path.append( './models')
+
 from contextlib import closing
 import os
 import sqlite3
 from flask import Flask, request, session, g, redirect, url_for, \
      abort, render_template, flash
-
+import user_auth
+from user_auth import UserAuth
 
 
 
@@ -70,21 +74,51 @@ def login():
         elif request.form['password'] != app.config['PASSWORD']:
             error = 'Invalid password'
         else:
+            print(session)
             session['logged_in'] = True
+            print(session)
             flash('You were logged in')
             return redirect(url_for('show_entries'))
     return render_template('login.html', error=error)
     
 @app.route('/logout')
 def logout():
+    print(session)
     session.pop('logged_in', None)
     flash('You were logged out')
     return redirect(url_for('show_entries'))
     
-    
-if __name__ == '__main__':
+
+
+# FOR NEW USERS TO SIGN UP
+@app.route('/sign_up', methods=['GET','POST'])
+def sign_up():
+    if(request.method == "POST"):
+        if request.form['username'] != '' and request.form['password'] != '':
+            g.db.execute('insert into users (email, password) values (?, ?)',
+                 [request.form['email'], request.form['password']])
+            g.db.commit()
+       
+        else:
+            print(session)
+            session['logged_in'] = True
+            print(session)
+            flash('You were logged in')
+            return redirect(url_for('show_entries'))
+    else:
+        if session.get('logged_in'):
+            flash('you must sign out')
+            return redirect(url_for('show_entries'))
+        # g.db.execute('insert into entries (title, text) values (?, ?)',
+        #              [request.form['title'], request.form['text']])
+        # g.db.commit()
+        # flash('New entry was successfully posted')
+        # return redirect(url_for('show_entries'))
+        return render_template('sign_up.html', error=None)
+
+
+
+
+
+if(__name__ == '__main__'):
     app.run(host=os.getenv('IP', '0.0.0.0'),port=int(os.getenv('PORT', 8080)))
-
-
-
-
