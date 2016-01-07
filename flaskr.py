@@ -87,5 +87,4 @@ if __name__ == '__main__':
 
 
 
-# TODO 
-# where I left off: http://flask.pocoo.org/docs/0.9/tutorial/dbcon/
+
