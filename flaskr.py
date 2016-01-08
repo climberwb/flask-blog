@@ -10,7 +10,7 @@ from flask import Flask, request, session, g, redirect, url_for, \
      abort, render_template, flash
 import user_auth
 from user_auth import UserAuth
-
+from user_auth import check_password_hash
 
 
 
@@ -93,11 +93,19 @@ def logout():
 # FOR NEW USERS TO SIGN UP
 @app.route('/sign_up', methods=['GET','POST'])
 def sign_up():
+    # cur = g.db.execute('select email from users order by id desc')
+    # users = [dict(user=row[0]) for row in cur.fetchall()]
+    # import code; code.interact(local=dict(globals(), **locals()))
     if(request.method == "POST"):
-        if request.form['username'] != '' and request.form['password'] != '':
+        if request.form['email'] != '' and request.form['password'] != '':
+            user = UserAuth(request.form['email'],request.form['password'])
+            password_hash = user.pw_hash
+            
+            print(request.form['email']+' '+password_hash)
             g.db.execute('insert into users (email, password) values (?, ?)',
-                 [request.form['email'], request.form['password']])
+                 [request.form['email'], password_hash ])
             g.db.commit()
+            print('after commit')
        
         else:
             print(session)
@@ -109,15 +117,30 @@ def sign_up():
         if session.get('logged_in'):
             flash('you must sign out')
             return redirect(url_for('show_entries'))
+        else:
+            return render_template('sign_up.html', error=None)
         # g.db.execute('insert into entries (title, text) values (?, ?)',
         #              [request.form['title'], request.form['text']])
         # g.db.commit()
         # flash('New entry was successfully posted')
         # return redirect(url_for('show_entries'))
-        return render_template('sign_up.html', error=None)
+    print('end of function')
+    return redirect(url_for('show_entries'))
 
 
-
+@app.route('/users', methods=['GET'])
+def users():
+    cur = g.db.execute('select email from users order by id desc')
+    users = [dict(email=row[0]) for row in cur.fetchall()]
+    print(users)
+    return render_template('users.html', users=users)
+        
+        # g.db.execute('insert into entries (title, text) values (?, ?)',
+        #              [request.form['title'], request.form['text']])
+        # g.db.commit()
+        # flash('New entry was successfully posted')
+        # return redirect(url_for('show_entries'))
+       
 
 
 if(__name__ == '__main__'):
